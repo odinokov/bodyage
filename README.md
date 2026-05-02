@@ -1,5 +1,7 @@
 # Body Shape Age Calculator
 
+**Live app: [odinokov.github.io/bodyage](https://odinokov.github.io/bodyage)**
+
 ## Description
 The Body Shape Age Calculator is a web application that calculates the predicted age based on the Body Shape Index (ABSI). The ABSI is calculated by dividing waist circumference by its estimate obtained from allometric regression of weight and height. The corresponding mortality risks are converted into loss/gain of years.
 

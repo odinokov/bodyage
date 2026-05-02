@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Theme Selector — Body Shape Age v2.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Karla:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    font-family: "Karla", system-ui, sans-serif;
+    font-size: 14px;
+    background: #e8e8e8;
+    color: #111;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    height: 42px;
+    background: #111;
+    color: #e8e8e8;
+    flex-shrink: 0;
+    gap: 16px;
+  }
+  .topbar-title {
+    font-family: "Space Mono", monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .topbar a {
+    font-family: "Space Mono", monospace;
+    font-size: 0.62rem;
+    color: #e8e8e8;
+    text-decoration: none;
+    letter-spacing: 0.08em;
+    opacity: 0.55;
+    transition: opacity 0.15s;
+  }
+  .topbar a:hover { opacity: 1; }
+
+  /* ── Layout ── */
+  .layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 256px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid #d8d8d8;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sidebar-head {
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid #eee;
+    font-family: "Space Mono", monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #888;
+    flex-shrink: 0;
+  }
+
+  .theme-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px;
+  }
+
+  .theme-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    cursor: pointer;
+    border-radius: 3px;
+    margin-bottom: 2px;
+    transition: background 0.1s;
+    user-select: none;
+  }
+  .theme-item:hover { background: #f4f4f4; }
+  .theme-item.active { background: #111; color: #fff; }
+  .theme-item.active .item-desc { color: #888; }
+
+  .swatches {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .swatch {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.12);
+    flex-shrink: 0;
+  }
+
+  .item-info { flex: 1; min-width: 0; }
+  .item-name {
+    font-family: "Space Mono", monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .item-desc {
+    font-size: 0.72rem;
+    color: #777;
+    margin-top: 1px;
+  }
+
+  /* ── CSS output panel ── */
+  .css-panel {
+    border-top: 1px solid #e0e0e0;
+    background: #f8f8f8;
+    flex-shrink: 0;
+  }
+  .css-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+  }
+  .css-panel-label {
+    font-family: "Space Mono", monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #666;
+  }
+  .copy-btn {
+    font-family: "Space Mono", monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: #111;
+    color: #fff;
+    border: none;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .copy-btn:hover  { background: #333; }
+  .copy-btn.copied { background: #1c5228; }
+
+  .css-code {
+    font-family: "Space Mono", monospace;
+    font-size: 0.6rem;
+    line-height: 1.85;
+    padding: 10px 12px;
+    color: #333;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre;
+  }
+
+  /* ── Preview area ── */
+  .preview-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .browser-bar {
+    height: 36px;
+    background: #e0e0e0;
+    border-bottom: 1px solid #c8c8c8;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #febc2e; }
+  .dot-g { background: #28c840; }
+
+  .url-bar {
+    flex: 1;
+    background: #fff;
+    border: 1px solid #c8c8c8;
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 0.68rem;
+    color: #666;
+    font-family: "Space Mono", monospace;
+    pointer-events: none;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  iframe {
+    flex: 1;
+    border: none;
+    background: #fff;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-title">Theme Selector — Body Shape Age v2.0</span>
+  <a href="index.html" target="_blank">Open app ↗</a>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-head">Color scheme</div>
+    <div class="theme-list" id="theme-list"></div>
+    <div class="css-panel">
+      <div class="css-panel-head">
+        <span class="css-panel-label">:root</span>
+        <button class="copy-btn" id="copy-btn">Copy</button>
+      </div>
+      <div class="css-code" id="css-output"></div>
+    </div>
+  </aside>
+
+  <div class="preview-wrap">
+    <div class="browser-bar">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+      <div class="url-bar">index.html</div>
+    </div>
+    <iframe id="preview-frame" src="index.html" title="App preview"></iframe>
+  </div>
+</div>
+
+<script>
+const THEMES = [
+  {
+    id: "parchment",
+    name: "Warm Parchment",
+    desc: "Current production",
+    vars: {
+      "--bg":       "#fefaf4",
+      "--surface":  "#ede4d2",
+      "--border":   "#a89878",
+      "--text":     "#0f0d0b",
+      "--muted":    "#2a2018",
+      "--amber":    "#7a4e0e",
+      "--amber-bg": "rgba(122,78,14,0.09)",
+      "--green":    "#1c5228",
+      "--red":      "#8a1f10",
+    }
+  },
+  {
+    id: "midnight",
+    name: "Midnight",
+    desc: "Dark, warm amber",
+    vars: {
+      "--bg":       "#0d0c0a",
+      "--surface":  "#161410",
+      "--border":   "#2e2820",
+      "--text":     "#e2d9cc",
+      "--muted":    "#9a8e82",
+      "--amber":    "#c8922a",
+      "--amber-bg": "rgba(200,146,42,0.1)",
+      "--green":    "#4a9c6a",
+      "--red":      "#c04530",
+    }
+  },
+  {
+    id: "studio",
+    name: "Studio White",
+    desc: "Cold white, slate accent",
+    vars: {
+      "--bg":       "#ffffff",
+      "--surface":  "#eef1f5",
+      "--border":   "#8896a8",
+      "--text":     "#0a0d10",
+      "--muted":    "#1e2a38",
+      "--amber":    "#1a4a8a",
+      "--amber-bg": "rgba(26,74,138,0.08)",
+      "--green":    "#155e38",
+      "--red":      "#8a1818",
+    }
+  },
+  {
+    id: "forest",
+    name: "Forest",
+    desc: "Sage green, earthy",
+    vars: {
+      "--bg":       "#f2f7f2",
+      "--surface":  "#deeade",
+      "--border":   "#7a9878",
+      "--text":     "#0c180c",
+      "--muted":    "#1a3a1a",
+      "--amber":    "#2e6020",
+      "--amber-bg": "rgba(46,96,32,0.09)",
+      "--green":    "#1a5220",
+      "--red":      "#7a2010",
+    }
+  },
+  {
+    id: "terracotta",
+    name: "Terracotta",
+    desc: "Warm clay, rust accent",
+    vars: {
+      "--bg":       "#faf4f0",
+      "--surface":  "#ede0d8",
+      "--border":   "#b87858",
+      "--text":     "#150c08",
+      "--muted":    "#3a1e10",
+      "--amber":    "#a83818",
+      "--amber-bg": "rgba(168,56,24,0.09)",
+      "--green":    "#2a5e28",
+      "--red":      "#8a1a0a",
+    }
+  },
+  {
+    id: "arctic",
+    name: "Arctic",
+    desc: "Ice blue, cool contrast",
+    vars: {
+      "--bg":       "#f0f6fa",
+      "--surface":  "#dce8f2",
+      "--border":   "#6890a8",
+      "--text":     "#080f18",
+      "--muted":    "#18283e",
+      "--amber":    "#0a4878",
+      "--amber-bg": "rgba(10,72,120,0.08)",
+      "--green":    "#0e5e38",
+      "--red":      "#7a1818",
+    }
+  },
+];
+
+const frame   = document.getElementById("preview-frame");
+let activeId  = THEMES[0].id;
+
+function buildCSS(theme) {
+  return ":root {\n" +
+    Object.entries(theme.vars).map(([k, v]) => `  ${k}: ${v};`).join("\n") +
+    "\n}";
+}
+
+function applyToFrame(theme) {
+  try {
+    const root = frame.contentDocument?.documentElement;
+    if (!root) return;
+    Object.entries(theme.vars).forEach(([k, v]) => root.style.setProperty(k, v));
+  } catch (_) {}
+}
+
+function selectTheme(id) {
+  const theme = THEMES.find(t => t.id === id);
+  if (!theme) return;
+  activeId = id;
+  document.querySelectorAll(".theme-item").forEach(el =>
+    el.classList.toggle("active", el.dataset.id === id)
+  );
+  document.getElementById("css-output").textContent = buildCSS(theme);
+  applyToFrame(theme);
+}
+
+// Build sidebar list
+const list = document.getElementById("theme-list");
+THEMES.forEach(theme => {
+  const item = document.createElement("div");
+  item.className = "theme-item";
+  item.dataset.id = theme.id;
+  item.addEventListener("click", () => selectTheme(theme.id));
+
+  const swatchKeys = ["--bg", "--surface", "--text", "--amber", "--green", "--red"];
+  item.innerHTML = `
+    <div class="swatches">
+      ${swatchKeys.map(k => `<div class="swatch" style="background:${theme.vars[k]}"></div>`).join("")}
+    </div>
+    <div class="item-info">
+      <div class="item-name">${theme.name}</div>
+      <div class="item-desc">${theme.desc}</div>
+    </div>`;
+  list.appendChild(item);
+});
+
+// Copy button
+document.getElementById("copy-btn").addEventListener("click", () => {
+  const btn  = document.getElementById("copy-btn");
+  const text = document.getElementById("css-output").textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = "Copied!";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 1800);
+  });
+});
+
+// Re-apply theme after iframe navigates
+frame.addEventListener("load", () => {
+  const theme = THEMES.find(t => t.id === activeId);
+  if (theme) applyToFrame(theme);
+});
+
+selectTheme(THEMES[0].id);
+</script>
+</body>
+</html>

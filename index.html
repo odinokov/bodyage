@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Body Shape Age</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;1,400&family=Space+Mono:wght@400;700&family=Karla:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #fefaf4;
+    --surface:  #ede4d2;
+    --border:   #a89878;
+    --text:     #0f0d0b;
+    --muted:    #2a2018;
+    --amber:    #7a4e0e;
+    --amber-bg: rgba(122,78,14,0.09);
+    --green:    #1c5228;
+    --red:      #8a1f10;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 19px; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Karla", system-ui, sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.028;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 52px 24px 96px;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    padding-bottom: 32px;
+    margin-bottom: 48px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h1 {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-weight: 300;
+    font-size: clamp(2.6rem, 6vw, 4.4rem);
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+  h1 em { font-style: italic; color: var(--amber); }
+
+  .header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    padding-top: 4px;
+  }
+
+  .badge {
+    font-family: "Space Mono", monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+
+
+  /* ── Toggle buttons (unit + sex) ── */
+  .toggle-group {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .toggle-group input { display: none; }
+  .toggle-group label {
+    padding: 7px 18px;
+    font-family: "Space Mono", monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    user-select: none;
+  }
+  .toggle-group input:checked + label {
+    background: var(--text);
+    color: var(--bg);
+  }
+
+  /* ── Lede ── */
+  .lede {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--muted);
+    max-width: 54ch;
+    margin-bottom: 52px;
+    line-height: 1.65;
+  }
+
+  /* ── Two-column layout ── */
+  main {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+  @media (min-width: 720px) {
+    main { grid-template-columns: 1fr 1fr; gap: 72px; }
+  }
+
+  /* ── Input fields ── */
+  .sex-wrap { margin-bottom: 36px; }
+  .sex-wrap .toggle-group { width: 100%; }
+  .sex-wrap .toggle-group label { flex: 1; text-align: center; }
+
+  .field { margin-bottom: 26px; }
+
+  .field-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+
+  .field label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.17em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .unit-tag {
+    font-family: "Space Mono", monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+  }
+
+  .slider-row {
+    display: grid;
+    grid-template-columns: 1fr 68px;
+    gap: 12px;
+    align-items: center;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+    outline: none;
+    margin: 14px 0;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px; height: 13px;
+    background: var(--amber);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.15s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.4);
+    box-shadow: 0 0 0 5px rgba(200,146,42,0.2);
+  }
+  input[type="range"]:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 5px rgba(200,146,42,0.25);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 13px; height: 13px;
+    background: var(--amber);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+  }
+
+  input[type="number"] {
+    font-family: "Space Mono", monospace;
+    font-size: 0.82rem;
+    width: 100%;
+    padding: 4px 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    text-align: right;
+    -moz-appearance: textfield;
+  }
+  input[type="number"]:focus {
+    outline: none;
+    border-bottom-color: var(--amber);
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  .ft-readout {
+    font-family: "Space Mono", monospace;
+    font-size: 0.82rem;
+    color: var(--text);
+    text-align: right;
+    padding: 4px 0;
+    white-space: nowrap;
+  }
+
+  [data-show-on="imperial"] { display: none; }
+  body[data-unit="imperial"] [data-show-on="metric"]   { display: none; }
+  body[data-unit="imperial"] [data-show-on="imperial"] { display: block; }
+
+  /* ── Result card ── */
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 36px 32px 32px;
+  }
+  @media (min-width: 720px) {
+    .result-card { position: sticky; top: 32px; }
+  }
+
+  .result-eyebrow {
+    font-family: "Space Mono", monospace;
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .result-number {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-weight: 500;
+    font-size: clamp(7rem, 17vw, 11rem);
+    line-height: 0.85;
+    letter-spacing: -0.03em;
+    color: var(--amber);
+    transition: opacity 0.1s ease;
+  }
+  .result-number.flash { opacity: 0.25; }
+
+  .result-display {
+    display: flex;
+    align-items: baseline;
+    gap: 0.3em;
+    margin-bottom: 28px;
+  }
+
+  .result-unit {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-style: italic;
+    font-size: 1.4rem;
+    color: var(--muted);
+  }
+
+  /* ── Age ruler ── */
+  .ruler {
+    position: relative;
+    height: 34px;
+    margin-bottom: 24px;
+    user-select: none;
+  }
+  .ruler-track {
+    position: absolute;
+    top: 8px;
+    left: 0; right: 0;
+    height: 1px;
+    background: var(--border);
+  }
+  .ruler-fill {
+    position: absolute;
+    top: 8px;
+    height: 1px;
+    background: var(--amber);
+    opacity: 0.45;
+    transition: left 0.22s ease, width 0.22s ease;
+  }
+  .ruler-tick {
+    position: absolute;
+    top: 2px;
+    width: 1px;
+    height: 12px;
+    transition: left 0.22s ease;
+  }
+  .ruler-tick.chrono { background: var(--muted); }
+  .ruler-tick.bio    { background: var(--amber); }
+  .ruler-lbl {
+    position: absolute;
+    top: 18px;
+    font-family: "Space Mono", monospace;
+    font-size: 0.56rem;
+    transform: translateX(-50%);
+    transition: left 0.22s ease;
+    white-space: nowrap;
+  }
+  .ruler-lbl.chrono { color: var(--muted); }
+  .ruler-lbl.bio    { color: var(--amber); }
+
+  /* ── Delta message ── */
+  .delta {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 1.1rem;
+    line-height: 1.5;
+    padding: 16px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+    color: var(--muted);
+  }
+  .delta strong { font-weight: 600; }
+  .delta.younger strong { color: var(--green); }
+  .delta.older   strong { color: var(--red); }
+  .delta.same    strong { color: var(--text); }
+
+  /* ── Stat breakdown ── */
+  .breakdown {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .stat-lbl {
+    font-family: "Space Mono", monospace;
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .stat-val {
+    font-family: "Space Mono", monospace;
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+
+  /* ── Warning ── */
+  .result-display { position: relative; }
+
+  .result-display.clamped { cursor: help; }
+
+  .result-display.clamped::after {
+    content: "Z-score at model boundary — prediction clamped. May not be reliable for body shapes this far from the population mean.";
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 0;
+    width: 260px;
+    padding: 10px 14px;
+    background: var(--text);
+    color: var(--bg);
+    font-family: "Karla", sans-serif;
+    font-size: 0.75rem;
+    line-height: 1.55;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+  }
+  .result-display.clamped:hover::after { opacity: 1; }
+
+  /* ── Footer ── */
+  footer {
+    margin-top: 80px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.75;
+  }
+  @media (min-width: 640px) {
+    footer { grid-template-columns: 1fr 1fr; }
+  }
+
+  footer h3 {
+    font-family: "Space Mono", monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  footer p { margin-bottom: 8px; }
+  footer em { font-style: italic; }
+  footer sup { font-size: 0.7em; }
+  footer a { color: var(--amber); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  .disclaimer {
+    grid-column: 1 / -1;
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body data-unit="metric">
+<div class="wrap">
+
+  <header>
+    <h1>Body Shape <em>Age</em></h1>
+    <div class="header-right">
+      <span class="badge">ABSI · v2.0</span>
+<div class="toggle-group" role="radiogroup" aria-label="Measurement units">
+        <input type="radio" id="unit-m" name="unit" value="metric" checked>
+        <label for="unit-m">Metric</label>
+        <input type="radio" id="unit-i" name="unit" value="imperial">
+        <label for="unit-i">Imperial</label>
+      </div>
+    </div>
+  </header>
+
+  <p class="lede">A predicted biological age from <em>A Body Shape Index</em> — waist circumference normalised by height and BMI — converted into mortality-risk-equivalent years.</p>
+
+  <main>
+    <section aria-label="Inputs">
+      <div class="sex-wrap">
+        <div class="toggle-group" role="radiogroup" aria-label="Sex">
+          <input type="radio" id="sex-m" name="sex" value="male" checked>
+          <label for="sex-m">Male</label>
+          <input type="radio" id="sex-f" name="sex" value="female">
+          <label for="sex-f">Female</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-head">
+          <label for="age">Chronological age</label>
+          <span class="unit-tag">yr</span>
+        </div>
+        <div class="slider-row">
+          <input type="range" id="age-r" min="20" max="85" value="25">
+          <input type="number" id="age" min="20" max="85" value="25" aria-label="Age in years">
+        </div>
+      </div>
+
+      <div class="field" data-show-on="metric">
+        <div class="field-head">
+          <label for="height">Height</label>
+          <span class="unit-tag">cm</span>
+        </div>
+        <div class="slider-row">
+          <input type="range" id="height-r" min="150" max="210" value="175" step="0.5">
+          <input type="number" id="height" min="100" max="230" value="175" step="0.5" aria-label="Height in cm">
+        </div>
+      </div>
+
+      <div class="field" data-show-on="imperial">
+        <div class="field-head">
+          <label for="height-imp">Height</label>
+          <span class="unit-tag">ft / in</span>
+        </div>
+        <div class="slider-row">
+          <input type="range" id="height-imp" min="54" max="84" value="69" step="0.5">
+          <output id="height-imp-out" class="ft-readout">5'9"</output>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-head">
+          <label for="weight">Weight</label>
+          <span class="unit-tag" data-unit-label="weight">kg</span>
+        </div>
+        <div class="slider-row">
+          <input type="range" id="weight-r" min="40" max="150" value="71" step="0.1">
+          <input type="number" id="weight" min="20" max="250" value="71" step="0.1" aria-label="Weight">
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-head">
+          <label for="waist">Waist circumference</label>
+          <span class="unit-tag" data-unit-label="waist">cm</span>
+        </div>
+        <div class="slider-row">
+          <input type="range" id="waist-r" min="50" max="150" value="79" step="0.5">
+          <input type="number" id="waist" min="40" max="200" value="79" step="0.5" aria-label="Waist circumference">
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="Result">
+      <div class="result-card">
+        <div class="result-eyebrow">Predicted ABSI age</div>
+        <div class="result-display" id="result-display">
+          <div class="result-number" id="prediction" aria-live="polite">—</div>
+          <div class="result-unit">years</div>
+        </div>
+
+        <div class="ruler" aria-hidden="true">
+          <div class="ruler-track"></div>
+          <div class="ruler-fill" id="ruler-fill"></div>
+          <div class="ruler-tick chrono" id="ruler-chrono"></div>
+          <div class="ruler-tick bio"    id="ruler-bio"></div>
+          <div class="ruler-lbl chrono"  id="ruler-chrono-lbl"></div>
+          <div class="ruler-lbl bio"     id="ruler-bio-lbl"></div>
+        </div>
+
+        <div class="delta" id="delta">—</div>
+
+        <div class="breakdown">
+          <div>
+            <div class="stat-lbl">BMI</div>
+            <div class="stat-val" id="bmi">—</div>
+          </div>
+          <div>
+            <div class="stat-lbl">ABSI</div>
+            <div class="stat-val" id="absi">—</div>
+          </div>
+          <div>
+            <div class="stat-lbl">Z-score</div>
+            <div class="stat-val" id="zscore">—</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="disclaimer">
+      For informational and educational use only. Not a medical diagnosis. ABSI captures one dimension of health; it ignores muscle mass, fitness, and genetics.
+    </div>
+    <div>
+      <h3>Method</h3>
+      <p>ABSI = waist / (BMI<sup>2/3</sup> · height<sup>1/2</sup>). The z-score is mapped to relative mortality risk, then converted to years: Δyears = <em>T</em> · ln(RR) / ln(2) with sex-specific doubling time <em>T</em> from a Gompertz–Makeham fit to NCHS 2023 US life tables, ages 20–80 (male 8.25 yr, female 7.27 yr). The original R app used a single <em>T</em> ≈ 6.93 yr.</p>
+      <p>Risk values may differ by a few percent from other ABSI calculators due to the polynomial fit used.</p>
+    </div>
+    <div>
+      <h3>References</h3>
+      <p>Krakauer &amp; Krakauer. <em>A New Body Shape Index Predicts Mortality Hazard Independently of Body Mass Index.</em> PLoS ONE 7, e39504 (2012).</p>
+      <p>Krakauer &amp; Krakauer. <em>An Anthropometric Risk Index Based on Height, Weight, Waist, and Hip.</em> J. Obesity 2016.</p>
+      <p>Arias E, Xu J, Kochanek KD. <em>United States Life Tables, 2023.</em> National Center for Health Statistics. National Vital Statistics Reports.</p>
+<p><a href="https://github.com/ffx-org/ffx" target="_blank" rel="noopener">FFX</a> — symbolic regression library used to fit the mortality-risk polynomial.</p>
+      <p>Ported from <a href="https://github.com/odinokov/BodyAge" target="_blank" rel="noopener">odinokov/BodyAge</a>.</p>
+    </div>
+  </footer>
+
+</div>
+<script>
+
+// ABSI normative data (mean, SD) by sex and integer age 2–85.
+// Derived from Krakauer 2012 supplementary tables, via odinokov/BodyAge.
+const ABSI_DATA = {"male":{"2":[0.0789,0.00384],"3":[0.07915,0.00384],"4":[0.07937,0.00383],"5":[0.07955,0.00383],"6":[0.07964,0.00382],"7":[0.07966,0.00382],"8":[0.07958,0.00382],"9":[0.07942,0.00381],"10":[0.07917,0.00381],"11":[0.07886,0.00381],"12":[0.07849,0.0038],"13":[0.0781,0.0038],"14":[0.07772,0.0038],"15":[0.07739,0.00379],"16":[0.07716,0.00379],"17":[0.07703,0.00378],"18":[0.07702,0.00378],"19":[0.07711,0.00378],"20":[0.07728,0.00377],"21":[0.0775,0.00377],"22":[0.07777,0.00377],"23":[0.07804,0.00376],"24":[0.07831,0.00376],"25":[0.07858,0.00376],"26":[0.07882,0.00375],"27":[0.07904,0.00375],"28":[0.07922,0.00374],"29":[0.07938,0.00374],"30":[0.07951,0.00374],"31":[0.07963,0.00373],"32":[0.07975,0.00373],"33":[0.07988,0.00373],"34":[0.08,0.00372],"35":[0.08013,0.00372],"36":[0.08027,0.00371],"37":[0.08042,0.00371],"38":[0.08057,0.00371],"39":[0.08072,0.0037],"40":[0.08087,0.0037],"41":[0.08102,0.0037],"42":[0.08117,0.00369],"43":[0.08132,0.00369],"44":[0.08148,0.00368],"45":[0.08165,0.00368],"46":[0.08183,0.00368],"47":[0.08201,0.00367],"48":[0.08221,0.00367],"49":[0.0824,0.00367],"50":[0.0826,0.00366],"51":[0.08279,0.00366],"52":[0.08297,0.00365],"53":[0.08315,0.00365],"54":[0.08334,0.00365],"55":[0.08352,0.00364],"56":[0.08369,0.00364],"57":[0.08386,0.00364],"58":[0.08403,0.00363],"59":[0.08419,0.00363],"60":[0.08436,0.00362],"61":[0.08454,0.00362],"62":[0.08471,0.00362],"63":[0.08489,0.00361],"64":[0.08506,0.00361],"65":[0.08522,0.0036],"66":[0.08537,0.0036],"67":[0.08551,0.0036],"68":[0.08565,0.00359],"69":[0.08578,0.00359],"70":[0.08591,0.00359],"71":[0.08604,0.00358],"72":[0.08616,0.00358],"73":[0.08629,0.00357],"74":[0.08641,0.00357],"75":[0.08653,0.00357],"76":[0.08665,0.00356],"77":[0.08675,0.00356],"78":[0.08685,0.00355],"79":[0.08695,0.00355],"80":[0.08705,0.00355],"81":[0.08714,0.00354],"82":[0.08723,0.00354],"83":[0.08732,0.00354],"84":[0.08742,0.00353],"85":[0.08811,0.00356]},"female":{"2":[0.08031,0.00363],"3":[0.08016,0.00366],"4":[0.08001,0.00369],"5":[0.07985,0.00372],"6":[0.07969,0.00375],"7":[0.07952,0.00378],"8":[0.07935,0.0038],"9":[0.07917,0.00383],"10":[0.07899,0.00386],"11":[0.07881,0.00389],"12":[0.07863,0.00392],"13":[0.07846,0.00395],"14":[0.07829,0.00397],"15":[0.07814,0.004],"16":[0.07799,0.00403],"17":[0.07787,0.00406],"18":[0.07775,0.00408],"19":[0.07765,0.00411],"20":[0.07757,0.00414],"21":[0.0775,0.00416],"22":[0.07744,0.00419],"23":[0.0774,0.00422],"24":[0.07737,0.00424],"25":[0.07735,0.00427],"26":[0.07734,0.00429],"27":[0.07735,0.00432],"28":[0.07736,0.00435],"29":[0.07739,0.00437],"30":[0.07743,0.0044],"31":[0.07747,0.00442],"32":[0.07752,0.00445],"33":[0.07759,0.00447],"34":[0.07766,0.0045],"35":[0.07773,0.00452],"36":[0.07782,0.00454],"37":[0.0779,0.00457],"38":[0.078,0.00459],"39":[0.0781,0.00462],"40":[0.0782,0.00464],"41":[0.07831,0.00466],"42":[0.07842,0.00469],"43":[0.07854,0.00471],"44":[0.07866,0.00473],"45":[0.07879,0.00476],"46":[0.07892,0.00478],"47":[0.07905,0.0048],"48":[0.07919,0.00483],"49":[0.07933,0.00485],"50":[0.07947,0.00487],"51":[0.07962,0.00489],"52":[0.07977,0.00492],"53":[0.07992,0.00494],"54":[0.08007,0.00496],"55":[0.08023,0.00498],"56":[0.08039,0.00501],"57":[0.08055,0.00503],"58":[0.08072,0.00505],"59":[0.08088,0.00507],"60":[0.08105,0.00509],"61":[0.08122,0.00511],"62":[0.08139,0.00514],"63":[0.08156,0.00516],"64":[0.08174,0.00518],"65":[0.08191,0.0052],"66":[0.08208,0.00522],"67":[0.08226,0.00524],"68":[0.08243,0.00526],"69":[0.08261,0.00528],"70":[0.08278,0.0053],"71":[0.08296,0.00533],"72":[0.08313,0.00535],"73":[0.0833,0.00537],"74":[0.08346,0.00539],"75":[0.08363,0.00541],"76":[0.0838,0.00543],"77":[0.08396,0.00545],"78":[0.08412,0.00547],"79":[0.08428,0.00549],"80":[0.08444,0.00551],"81":[0.0846,0.00553],"82":[0.08476,0.00555],"83":[0.08492,0.00557],"84":[0.08508,0.00559],"85":[0.08533,0.00528]}};
+
+const Z_MIN = -4.740683;
+const Z_MAX =  2.177522;
+
+// Sex-specific MRDT (yr) from Gompertz-Makeham fit to NCHS 2023 US life tables,
+// ages 20–80, central mortality rates. Original R app used a single T ≈ 6.93.
+const MRDT = { male: 8.25, female: 7.27 };
+
+const IN_PER_CM = 1 / 2.54;
+const LB_PER_KG = 2.2046226218;
+
+let currentUnit = "metric";
+
+const pairs = [
+  ["age-r",    "age"],
+  ["height-r", "height"],
+  ["weight-r", "weight"],
+  ["waist-r",  "waist"],
+];
+
+function syncPair(rangeId, numId) {
+  const r = document.getElementById(rangeId);
+  const n = document.getElementById(numId);
+  r.addEventListener("input", () => { n.value = r.value; compute(); });
+  n.addEventListener("input", () => { r.value = n.value; compute(); });
+}
+pairs.forEach(([a, b]) => syncPair(a, b));
+
+const heightImp    = document.getElementById("height-imp");
+const heightImpOut = document.getElementById("height-imp-out");
+
+function formatFtIn(totalIn) {
+  // Snap to nearest 0.5" so readout never disagrees with slider.
+  const snapped = Math.round(totalIn * 2) / 2;
+  const ft   = Math.floor(snapped / 12);
+  const inch = snapped - ft * 12;
+  return `${ft}'${inch % 1 === 0 ? inch.toFixed(0) : inch.toFixed(1)}"`;
+}
+
+heightImp.addEventListener("input", () => {
+  heightImpOut.textContent = formatFtIn(parseFloat(heightImp.value));
+  compute();
+});
+
+document.querySelectorAll('input[name="sex"]').forEach(el =>
+  el.addEventListener("change", compute)
+);
+document.querySelectorAll('input[name="unit"]').forEach(el =>
+  el.addEventListener("change", () => setUnit(el.value))
+);
+
+function setRange(id, min, max, step, value) {
+  const el = document.getElementById(id);
+  el.min = min; el.max = max; el.step = step;
+  if (value !== undefined) el.value = value;
+}
+
+function setUnit(newUnit) {
+  if (newUnit === currentUnit) return;
+  const metric = readMetric();
+  currentUnit = newUnit;
+  document.body.dataset.unit = newUnit;
+
+  if (newUnit === "metric") {
+    setRange("height-r", 150, 210, 0.5, metric.h_cm.toFixed(1));
+    setRange("height",   100, 230, 0.5, metric.h_cm.toFixed(1));
+    setRange("weight-r",  40, 150, 0.1, metric.w_kg.toFixed(1));
+    setRange("weight",    20, 250, 0.1, metric.w_kg.toFixed(1));
+    setRange("waist-r",   50, 150, 0.5, metric.wc_cm.toFixed(1));
+    setRange("waist",     40, 200, 0.5, metric.wc_cm.toFixed(1));
+    document.querySelector('[data-unit-label="weight"]').textContent = "kg";
+    document.querySelector('[data-unit-label="waist"]').textContent  = "cm";
+  } else {
+    const totalIn = Math.round(metric.h_cm * IN_PER_CM * 2) / 2;
+    heightImp.value = totalIn;
+    heightImpOut.textContent = formatFtIn(totalIn);
+
+    const w_lb  = metric.w_kg  * LB_PER_KG;
+    const wc_in = metric.wc_cm * IN_PER_CM;
+    setRange("weight-r",  80, 330, 0.5,  w_lb.toFixed(1));
+    setRange("weight",    50, 500, 0.5,  w_lb.toFixed(1));
+    setRange("waist-r",   20,  60, 0.25, wc_in.toFixed(1));
+    setRange("waist",     15,  80, 0.25, wc_in.toFixed(1));
+    document.querySelector('[data-unit-label="weight"]').textContent = "lb";
+    document.querySelector('[data-unit-label="waist"]').textContent  = "in";
+  }
+  compute();
+}
+
+function readMetric() {
+  if (currentUnit === "metric") {
+    return {
+      h_cm:  parseFloat(document.getElementById("height").value),
+      w_kg:  parseFloat(document.getElementById("weight").value),
+      wc_cm: parseFloat(document.getElementById("waist").value),
+    };
+  }
+  return {
+    h_cm:  (parseFloat(heightImp.value) || 0) * 2.54,
+    w_kg:  parseFloat(document.getElementById("weight").value) / LB_PER_KG,
+    wc_cm: parseFloat(document.getElementById("waist").value) / IN_PER_CM,
+  };
+}
+
+const RULER_MIN = 15, RULER_MAX = 95;
+
+function updateRuler(age, prediction) {
+  const pct = v =>
+    ((Math.max(RULER_MIN, Math.min(RULER_MAX, v)) - RULER_MIN) /
+     (RULER_MAX - RULER_MIN) * 100).toFixed(2) + "%";
+  const cp = pct(age), bp = pct(prediction);
+  const cv = parseFloat(cp), bv = parseFloat(bp);
+  document.getElementById("ruler-fill").style.left        = Math.min(cv, bv) + "%";
+  document.getElementById("ruler-fill").style.width       = Math.abs(bv - cv) + "%";
+  document.getElementById("ruler-chrono").style.left      = cp;
+  document.getElementById("ruler-bio").style.left         = bp;
+  document.getElementById("ruler-chrono-lbl").style.left  = cp;
+  document.getElementById("ruler-bio-lbl").style.left     = bp;
+  document.getElementById("ruler-chrono-lbl").textContent = age;
+  document.getElementById("ruler-bio-lbl").textContent    = prediction;
+}
+
+function compute() {
+  const sex = document.querySelector('input[name="sex"]:checked').value;
+  const age = parseInt(document.getElementById("age").value, 10);
+  const { h_cm, w_kg, wc_cm } = readMetric();
+
+  if (![age, h_cm, w_kg, wc_cm].every(v => Number.isFinite(v) && v > 0)) return;
+
+  const h_m  = h_cm  / 100;
+  const wc_m = wc_cm / 100;
+  const bmi  = w_kg / (h_m * h_m);
+  const absi = wc_m / (Math.pow(bmi, 2/3) * Math.pow(h_m, 0.5));
+
+  const [mean, std] = ABSI_DATA[sex][String(Math.max(2, Math.min(85, age)))];
+  let z = (absi - mean) / std;
+  let clamped = false;
+  if (z < Z_MIN) { z = Z_MIN; clamped = true; }
+  if (z > Z_MAX) { z = Z_MAX; clamped = true; }
+
+  // Krakauer 2012 mortality-risk polynomial (z → relative risk).
+  const rdr        = (0.918 + 0.0485*z + 0.0347*z*z) / (1.0 - 0.284*z);
+  const years      = -(MRDT[sex] / Math.LN2) * Math.log(rdr);
+  const prediction = Math.round(age - years);
+  const delta      = prediction - age;
+
+  const predEl = document.getElementById("prediction");
+  predEl.classList.add("flash");
+  requestAnimationFrame(() => {
+    predEl.textContent = prediction;
+    predEl.classList.remove("flash");
+  });
+
+  document.getElementById("bmi").textContent    = bmi.toFixed(1);
+  document.getElementById("absi").textContent   = absi.toFixed(4);
+  document.getElementById("zscore").textContent = z.toFixed(2);
+
+  const deltaEl = document.getElementById("delta");
+  deltaEl.classList.remove("younger", "older", "same");
+  if (delta < 0) {
+    deltaEl.innerHTML = `<strong>${Math.abs(delta)} yr younger</strong> than your chronological age.`;
+    deltaEl.classList.add("younger");
+  } else if (delta > 0) {
+    deltaEl.innerHTML = `<strong>${delta} yr older</strong> than your chronological age.`;
+    deltaEl.classList.add("older");
+  } else {
+    deltaEl.innerHTML = `<strong>Same as your chronological age.</strong>`;
+    deltaEl.classList.add("same");
+  }
+
+  document.getElementById("result-display").classList.toggle("clamped", clamped);
+  updateRuler(age, prediction);
+}
+
+document.body.dataset.unit = currentUnit;
+compute();
+
+</script>
+</body>
+</html>
