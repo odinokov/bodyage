@@ -6,7 +6,7 @@
 <title>Body Shape Age</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;1,400&family=Space+Mono:wght@400;700&family=Karla:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;1,400&family=Space+Mono&family=Karla:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg:       #fefaf4;
@@ -15,7 +15,6 @@
     --text:     #0f0d0b;
     --muted:    #2a2018;
     --amber:    #7a4e0e;
-    --amber-bg: rgba(122,78,14,0.09);
     --green:    #1c5228;
     --red:      #8a1f10;
   }
@@ -225,9 +224,8 @@
     white-space: nowrap;
   }
 
-  [data-show-on="imperial"] { display: none; }
-  body[data-unit="imperial"] [data-show-on="metric"]   { display: none; }
-  body[data-unit="imperial"] [data-show-on="imperial"] { display: block; }
+  body:not([data-unit="imperial"]) [data-show-on="imperial"] { display: none; }
+  body[data-unit="imperial"]       [data-show-on="metric"]   { display: none; }
 
   /* ── Result card ── */
   .result-card {
@@ -260,6 +258,7 @@
   .result-number.flash { opacity: 0.25; }
 
   .result-display {
+    position: relative;
     display: flex;
     align-items: baseline;
     gap: 0.3em;
@@ -353,8 +352,6 @@
   }
 
   /* ── Warning ── */
-  .result-display { position: relative; }
-
   .result-display.clamped { cursor: help; }
 
   .result-display.clamped::after {
@@ -574,7 +571,25 @@ const MRDT = { male: 8.25, female: 7.27 };
 const IN_PER_CM = 1 / 2.54;
 const LB_PER_KG = 2.2046226218;
 
-let currentUnit = "metric";
+const $ = id => document.getElementById(id);
+
+const els = {
+  age:       $("age"),
+  height:    $("height"),
+  weight:    $("weight"),
+  waist:     $("waist"),
+  prediction: $("prediction"),
+  bmi:       $("bmi"),
+  absi:      $("absi"),
+  zscore:    $("zscore"),
+  delta:     $("delta"),
+  display:   $("result-display"),
+  fill:      $("ruler-fill"),
+  chrono:    $("ruler-chrono"),
+  bio:       $("ruler-bio"),
+  chronoLbl: $("ruler-chrono-lbl"),
+  bioLbl:    $("ruler-bio-lbl"),
+};
 
 const pairs = [
   ["age-r",    "age"],
@@ -584,19 +599,21 @@ const pairs = [
 ];
 
 function syncPair(rangeId, numId) {
-  const r = document.getElementById(rangeId);
-  const n = document.getElementById(numId);
+  const r = $(rangeId);
+  const n = $(numId);
   r.addEventListener("input", () => { n.value = r.value; compute(); });
   n.addEventListener("input", () => { r.value = n.value; compute(); });
 }
 pairs.forEach(([a, b]) => syncPair(a, b));
 
-const heightImp    = document.getElementById("height-imp");
-const heightImpOut = document.getElementById("height-imp-out");
+const heightImp    = $("height-imp");
+const heightImpOut = $("height-imp-out");
+
+// Snap to nearest 0.5" so readout never disagrees with slider.
+const snapHalfInch = x => Math.round(x * 2) / 2;
 
 function formatFtIn(totalIn) {
-  // Snap to nearest 0.5" so readout never disagrees with slider.
-  const snapped = Math.round(totalIn * 2) / 2;
+  const snapped = snapHalfInch(totalIn);
   const ft   = Math.floor(snapped / 12);
   const inch = snapped - ft * 12;
   return `${ft}'${inch % 1 === 0 ? inch.toFixed(0) : inch.toFixed(1)}"`;
@@ -615,55 +632,49 @@ document.querySelectorAll('input[name="unit"]').forEach(el =>
 );
 
 function setRange(id, min, max, step, value) {
-  const el = document.getElementById(id);
+  const el = $(id);
   el.min = min; el.max = max; el.step = step;
   if (value !== undefined) el.value = value;
 }
 
+function setPair(field, rMin, rMax, nMin, nMax, step, value, label) {
+  setRange(field + "-r", rMin, rMax, step, value);
+  setRange(field,        nMin, nMax, step, value);
+  if (label) document.querySelector(`[data-unit-label="${field}"]`).textContent = label;
+}
+
 function setUnit(newUnit) {
-  if (newUnit === currentUnit) return;
+  if (newUnit === document.body.dataset.unit) return;
   const metric = readMetric();
-  currentUnit = newUnit;
   document.body.dataset.unit = newUnit;
 
   if (newUnit === "metric") {
-    setRange("height-r", 150, 210, 0.5, metric.h_cm.toFixed(1));
-    setRange("height",   100, 230, 0.5, metric.h_cm.toFixed(1));
-    setRange("weight-r",  40, 150, 0.1, metric.w_kg.toFixed(1));
-    setRange("weight",    20, 250, 0.1, metric.w_kg.toFixed(1));
-    setRange("waist-r",   50, 150, 0.5, metric.wc_cm.toFixed(1));
-    setRange("waist",     40, 200, 0.5, metric.wc_cm.toFixed(1));
-    document.querySelector('[data-unit-label="weight"]').textContent = "kg";
-    document.querySelector('[data-unit-label="waist"]').textContent  = "cm";
+    setPair("height", 150, 210, 100, 230, 0.5, metric.h_cm.toFixed(1));
+    setPair("weight",  40, 150,  20, 250, 0.1, metric.w_kg.toFixed(1),  "kg");
+    setPair("waist",   50, 150,  40, 200, 0.5, metric.wc_cm.toFixed(1), "cm");
   } else {
-    const totalIn = Math.round(metric.h_cm * IN_PER_CM * 2) / 2;
+    const totalIn = snapHalfInch(metric.h_cm * IN_PER_CM);
     heightImp.value = totalIn;
     heightImpOut.textContent = formatFtIn(totalIn);
 
-    const w_lb  = metric.w_kg  * LB_PER_KG;
-    const wc_in = metric.wc_cm * IN_PER_CM;
-    setRange("weight-r",  80, 330, 0.5,  w_lb.toFixed(1));
-    setRange("weight",    50, 500, 0.5,  w_lb.toFixed(1));
-    setRange("waist-r",   20,  60, 0.25, wc_in.toFixed(1));
-    setRange("waist",     15,  80, 0.25, wc_in.toFixed(1));
-    document.querySelector('[data-unit-label="weight"]').textContent = "lb";
-    document.querySelector('[data-unit-label="waist"]').textContent  = "in";
+    setPair("weight", 80, 330, 50, 500, 0.5,  (metric.w_kg  * LB_PER_KG).toFixed(1), "lb");
+    setPair("waist",  20,  60, 15,  80, 0.25, (metric.wc_cm * IN_PER_CM).toFixed(1), "in");
   }
   compute();
 }
 
 function readMetric() {
-  if (currentUnit === "metric") {
+  if (document.body.dataset.unit === "metric") {
     return {
-      h_cm:  parseFloat(document.getElementById("height").value),
-      w_kg:  parseFloat(document.getElementById("weight").value),
-      wc_cm: parseFloat(document.getElementById("waist").value),
+      h_cm:  parseFloat(els.height.value),
+      w_kg:  parseFloat(els.weight.value),
+      wc_cm: parseFloat(els.waist.value),
     };
   }
   return {
-    h_cm:  (parseFloat(heightImp.value) || 0) * 2.54,
-    w_kg:  parseFloat(document.getElementById("weight").value) / LB_PER_KG,
-    wc_cm: parseFloat(document.getElementById("waist").value) / IN_PER_CM,
+    h_cm:  (parseFloat(heightImp.value) || 0) / IN_PER_CM,
+    w_kg:  parseFloat(els.weight.value) / LB_PER_KG,
+    wc_cm: parseFloat(els.waist.value) / IN_PER_CM,
   };
 }
 
@@ -671,23 +682,22 @@ const RULER_MIN = 15, RULER_MAX = 95;
 
 function updateRuler(age, prediction) {
   const pct = v =>
-    ((Math.max(RULER_MIN, Math.min(RULER_MAX, v)) - RULER_MIN) /
-     (RULER_MAX - RULER_MIN) * 100).toFixed(2) + "%";
-  const cp = pct(age), bp = pct(prediction);
-  const cv = parseFloat(cp), bv = parseFloat(bp);
-  document.getElementById("ruler-fill").style.left        = Math.min(cv, bv) + "%";
-  document.getElementById("ruler-fill").style.width       = Math.abs(bv - cv) + "%";
-  document.getElementById("ruler-chrono").style.left      = cp;
-  document.getElementById("ruler-bio").style.left         = bp;
-  document.getElementById("ruler-chrono-lbl").style.left  = cp;
-  document.getElementById("ruler-bio-lbl").style.left     = bp;
-  document.getElementById("ruler-chrono-lbl").textContent = age;
-  document.getElementById("ruler-bio-lbl").textContent    = prediction;
+    (Math.max(RULER_MIN, Math.min(RULER_MAX, v)) - RULER_MIN) /
+    (RULER_MAX - RULER_MIN) * 100;
+  const cv = pct(age), bv = pct(prediction);
+  els.fill.style.left       = Math.min(cv, bv) + "%";
+  els.fill.style.width      = Math.abs(bv - cv) + "%";
+  els.chrono.style.left     = cv + "%";
+  els.bio.style.left        = bv + "%";
+  els.chronoLbl.style.left  = cv + "%";
+  els.bioLbl.style.left     = bv + "%";
+  els.chronoLbl.textContent = age;
+  els.bioLbl.textContent    = prediction;
 }
 
 function compute() {
   const sex = document.querySelector('input[name="sex"]:checked').value;
-  const age = parseInt(document.getElementById("age").value, 10);
+  const age = parseInt(els.age.value, 10);
   const { h_cm, w_kg, wc_cm } = readMetric();
 
   if (![age, h_cm, w_kg, wc_cm].every(v => Number.isFinite(v) && v > 0)) return;
@@ -695,7 +705,7 @@ function compute() {
   const h_m  = h_cm  / 100;
   const wc_m = wc_cm / 100;
   const bmi  = w_kg / (h_m * h_m);
-  const absi = wc_m / (Math.pow(bmi, 2/3) * Math.pow(h_m, 0.5));
+  const absi = wc_m / (Math.pow(bmi, 2/3) * Math.sqrt(h_m));
 
   const [mean, std] = ABSI_DATA[sex][String(Math.max(2, Math.min(85, age)))];
   let z = (absi - mean) / std;
@@ -709,18 +719,17 @@ function compute() {
   const prediction = Math.round(age - years);
   const delta      = prediction - age;
 
-  const predEl = document.getElementById("prediction");
-  predEl.classList.add("flash");
+  els.prediction.classList.add("flash");
   requestAnimationFrame(() => {
-    predEl.textContent = prediction;
-    predEl.classList.remove("flash");
+    els.prediction.textContent = prediction;
+    els.prediction.classList.remove("flash");
   });
 
-  document.getElementById("bmi").textContent    = bmi.toFixed(1);
-  document.getElementById("absi").textContent   = absi.toFixed(4);
-  document.getElementById("zscore").textContent = z.toFixed(2);
+  els.bmi.textContent    = bmi.toFixed(1);
+  els.absi.textContent   = absi.toFixed(4);
+  els.zscore.textContent = z.toFixed(2);
 
-  const deltaEl = document.getElementById("delta");
+  const deltaEl = els.delta;
   deltaEl.classList.remove("younger", "older", "same");
   if (delta < 0) {
     deltaEl.innerHTML = `<strong>${Math.abs(delta)} yr younger</strong> than your chronological age.`;
@@ -733,11 +742,10 @@ function compute() {
     deltaEl.classList.add("same");
   }
 
-  document.getElementById("result-display").classList.toggle("clamped", clamped);
+  els.display.classList.toggle("clamped", clamped);
   updateRuler(age, prediction);
 }
 
-document.body.dataset.unit = currentUnit;
 compute();
 
 </script>

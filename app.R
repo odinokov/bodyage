@@ -5,6 +5,10 @@ if (!requireNamespace("shiny", quietly = TRUE)) {
 library(shiny)
 library(jsonlite)
 
+# Z-score clamp bounds; must match Z_MIN/Z_MAX in index.html.
+Z_MIN <- -4.740683
+Z_MAX <- 2.177522
+
 ABSI_mean_std <- tryCatch(
   jsonlite::fromJSON("ABSI_mean_std.json"),
   error = function(e) {
@@ -86,12 +90,13 @@ server <- function(input, output) {
     BMI <- w / h^2
     ABSI <- wc / (BMI^(2/3) * h^0.5)
     
-    ABSI_mean <- ABSI_mean_std[[sex]][[as.character(age)]][1]
-    ABSI_std <- ABSI_mean_std[[sex]][[as.character(age)]][2]
-    
+    ABSI_stats <- ABSI_mean_std[[sex]][[as.character(age)]]
+    ABSI_mean <- ABSI_stats[1]
+    ABSI_std <- ABSI_stats[2]
+
     ABSI_z_score <- (ABSI - ABSI_mean) / ABSI_std
-    
-    ABSI_z_score <- pmin(pmax(ABSI_z_score, -4.740683), 2.177522)
+
+    ABSI_z_score <- pmin(pmax(ABSI_z_score, Z_MIN), Z_MAX)
     
     relative_death_risk <- (0.918 + 0.0485 * ABSI_z_score + 0.0347 * ABSI_z_score^2) / (1.0 - 0.284 * ABSI_z_score)
     
@@ -99,9 +104,8 @@ server <- function(input, output) {
     
     prediction <- round(age - years)
     
-    strong_text <- as.character(prediction)
-    strong_output <- HTML(paste("Your predicted ABSI age is ", tags$strong(strong_text), " years<br><br><br>"))
-    
+    strong_output <- HTML(paste("Your predicted ABSI age is ", tags$strong(prediction), " years<br><br><br>"))
+
     div(style = "font-size: larger;", h3(strong_output))
   })
 }
